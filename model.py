@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 import pickle
 from sklearn.ensemble import RandomForestClassifier
-import mediapipe as mp
 
 MODEL_PATH = "model.pkl"
 
@@ -23,41 +22,26 @@ def crop_face_and_embed(bgr_image, detection):
     emb = face.flatten().astype(np.float32) / 255.0
     return emb
 
-def extract_embedding_for_image(image_stream):
-    import cv2
-    import numpy as np
+def extract_embedding_for_image(stream_or_bytes):
+    # accepts a file-like stream (werkzeug FileStorage.stream)
+    import mediapipe.python.solutions as mp_solutions
 
-    mp_face = mp.solutions.face_detection.FaceDetection(
-        model_selection=1,
-        min_detection_confidence=0.5
+    mp_face = mp_solutions.face_detection.FaceDetection(
+     model_selection=1,
+     min_detection_confidence=0.5
     )
 
-    file_bytes = np.frombuffer(image_stream.read(), np.uint8)
-    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-
+    # read image from stream into numpy BGR
+    data = stream_or_bytes.read()
+    arr = np.frombuffer(data, np.uint8)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
     if img is None:
         return None
-
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    results = mp_face.process(img_rgb)
-
+    results = mp_face.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     if not results.detections:
         return None
-
-    # simple embedding (example)
-    h, w, _ = img.shape
-    det = results.detections[0]
-    bbox = det.location_data.relative_bounding_box
-
-    x1 = int(bbox.xmin * w)
-    y1 = int(bbox.ymin * h)
-    x2 = int((bbox.xmin + bbox.width) * w)
-    y2 = int((bbox.ymin + bbox.height) * h)
-
-    face = img[y1:y2, x1:x2]
-    face = cv2.resize(face, (100, 100))
-    return face.flatten()
-
+    emb = crop_face_and_embed(img, results.detections[0])
+    return emb
 
 # ---- Load model helpers ----
 def load_model_if_exists():
