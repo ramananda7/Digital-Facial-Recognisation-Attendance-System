@@ -3,5 +3,5 @@ gunicorn
 opencv-python
 numpy
 scikit-learn
+mediapipe==0.10.32
 pandas
-mediapipe==0.10.9
