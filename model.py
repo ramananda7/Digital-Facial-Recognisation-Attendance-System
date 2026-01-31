@@ -24,12 +24,8 @@ def crop_face_and_embed(bgr_image, detection):
 
 def extract_embedding_for_image(stream_or_bytes):
     # accepts a file-like stream (werkzeug FileStorage.stream)
-    import mediapipe.python.solutions as mp_solutions
-
-    mp_face = mp_solutions.face_detection.FaceDetection(
-     model_selection=1,
-     min_detection_confidence=0.5
-    )
+    import mediapipe as mp
+    mp_face = mp.solutions.face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
 
     # read image from stream into numpy BGR
     data = stream_or_bytes.read()
